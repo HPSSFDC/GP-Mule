@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:json-logger="http://www.mulesoft.org/schema/mule/json-logger"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/json-logger http://www.mulesoft.org/schema/mule/json-logger/current/mule-json-logger.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<json-logger:config name="Mule4_JSON_Logger_Config" doc:name="Mule4 JSON Logger Config" doc:id="aea63ff5-7569-43aa-8fc3-75bfbc4c9b87" environment="dev" applicationName="${app.name}" applicationVersion="${app.version}"/>
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1701cdea-c09e-4b26-b89c-d9d276c826a6" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="4af8222d-1297-467f-b6c2-31587d7075c0" file="app.yaml" />
+	<import doc:name="Import" doc:id="e5751e5c-1d8c-4664-b99f-b6568dcce359" file="global-error-handler.xml" />
+<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="bce9c539-892c-47e4-890b-5d5ab62d3ae9" >
+		<http:request-connection host="dev.services.globalpayments.com" port="8091" />
+	</http:request-config>
+	<configuration doc:name="Configuration" doc:id="db277aa6-8bb5-4490-8921-3e601e6d9f3e" defaultErrorHandler-ref="global-error-handler" />
+	<flow name="error-handler-exampleFlow" doc:id="f9ca2686-3ea5-48db-9e49-38986f92ae56" >
+		<http:listener doc:name="Listener" doc:id="20e66fa8-8e13-4043-87a2-c1ec50d3c2a6" config-ref="HTTP_Listener_config" path="/test">
+			<http:error-response >
+				<http:body ><![CDATA[#[output application/json --- payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<json-logger:logger doc:id="b06aca87-b5f9-4ccd-9798-ddd92143b526" config-ref="Mule4_JSON_Logger_Config" message="Request recieved" encryptionKey="MDwwDQYJKoZIhvcNAQEBBQADKwAwKAIhALh6zfMIoQOZOA2TPpkMa3QKYHZKFimtq5to0ptXYCNvAgMBAAE=" encryptContent="true"/>
+		<ee:transform doc:name="Transform Message" doc:id="7e19f06f-a8dd-4ba1-a9f6-ced11c522fa3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"response": if (payload.message contains "Hello") "Success" else "Failure"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="GET" doc:name="Request" doc:id="d92e0f26-0e30-4f28-97f6-8e4c7afb58d0" config-ref="HTTP_Request_configuration" path="/test"/>
+		<json-logger:logger doc:name="Logger" doc:id="70598285-cb35-4e57-9925-754ca81f0081" config-ref="Mule4_JSON_Logger_Config" tracePoint="AFTER_TRANSFORM" message="Final response"/>
+	
+	
+	</flow>
+</mule>
